@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>飲み会参加メンバー管理表</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 16px;
+  background: #f3f5f8;
+  color: #273142;
+  font-family: sans-serif;
+}
+.container { max-width: 850px; margin: auto; }
+h1 { font-size: 22px; margin: 8px 0 18px; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+.card {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 7px #0000000c;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-header h2 {
+  margin: 0;
+}
+input, select, button {
+  font: inherit;
+  padding: 10px;
+  border-radius: 7px;
+  border: 1px solid #d5dbe3;
+}
+input, select { width: 100%; background: white; }
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #dc5555;
+}
+button {
+  border: none;
+  background: #2866c7;
+  color: white;
+  cursor: pointer;
+}
+button:active { opacity: .75; }
+button.gray { background: #64748b; }
+button.red { background: #dc5555; }
+button.small { padding: 7px 10px; font-size: 12px; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.full { grid-column: 1 / -1; }
+label {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+.add-person-box {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-top: 10px;
+}
+.event-item {
+  padding: 12px;
+  border: 1px solid #e0e5ec;
+  border-radius: 9px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.event-item.active {
+  border: 2px solid #2866c7;
+  background: #f0f6ff;
+}
+.event-item.checked-delete {
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+}
+.event-info {
+  flex: 1;
+}
+.event-name { font-weight: bold; }
+.event-date { font-size: 12px; color: #64748b; margin-top: 4px; }
+.delete-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stats.cols-2 {
+  grid-template-columns: repeat(2,1fr);
+}
+.stat {
+  text-align: center;
+  padding: 12px 5px;
+  background: #f3f6fa;
+  border-radius: 9px;
+}
+.stat strong { display: block; font-size: 20px; }
+.stat span { font-size: 10px; color: #64748b; }
+
+.person {
+  border: 1px solid #e2e7ed;
+  border-radius: 9px;
+  margin-bottom: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+.person-header {
+  padding: 12px 16px;
+  cursor: pointer;
+  background: #fafbfc;
+}
+.person-header:hover {
+  background: #f0f4f8;
+}
+.person-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.person-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+.edit-toggle-label {
+  font-size: 12px;
+  color: #64748b;
+  background: #eef2f6;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.person-badges-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.person-badges-row + .person-badges-row {
+  margin-top: 4px;
+}
+.badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  font-weight: bold;
+}
+.badge.participating { background: #dcfce7; color: #166534; }
+.badge.absent { background: #fee2e2; color: #991b1b; }
+.badge.pending { background: #fef3c7; color: #92400e; }
+
+.person-body {
+  padding: 16px;
+  border-top: 1px solid #e2e7ed;
+  background: #fff;
+}
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.person-grid.cols-2 {
+  grid-template-columns: repeat(2,1fr);
+}
+.person-grid label { margin-bottom: 5px; }
+
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 18px 0 9px;
+}
+.empty { color: #929baa; font-size: 13px; padding: 10px 0; }
+.hidden { display: none !important; }
+
+@media(max-width:768px) {
+  body { padding: 10px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .add-person-box { grid-template-columns: 1fr; }
+  .person-grid, .person-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .stats, .stats.cols-2 { grid-template-columns: repeat(2,1fr); }
+  .full { grid-column: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🍻 飲み会参加メンバー管理表</h1>
+
+<div class="card">
+  <h2>飲み会を新規作成</h2>
+  <div class="form-grid">
+    <div class="full">
+      <label>飲み会タイトル</label>
+      <input id="newTitle" placeholder="例：忘年会・班長会飲み会">
+    </div>
+    <div>
+      <label>開催日</label>
+      <input id="newDate" type="date">
+    </div>
+    <div>
+      <label>二次会</label>
+      <select id="newHasSecond">
+        <option value="yes">二次会あり</option>
+        <option value="no">二次会なし（一次会のみ）</option>
+      </select>
+    </div>
+    <div class="full" style="display:flex;align-items:end">
+      <button style="width:100%" onclick="addNewEvent()">＋ 飲み会を追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>飲み会一覧</h2>
+    <button id="toggleDeleteModeBtn" class="gray small hidden" onclick="toggleDeleteMode()">選択削除</button>
+  </div>
+  <div id="eventList"></div>
+  <div id="deleteActions" class="delete-actions hidden">
+    <button class="gray small" onclick="toggleDeleteMode()">キャンセル</button>
+    <button class="red small" onclick="executeDeleteEvents()">削除実行</button>
+  </div>
+</div>
+
+<div id="management" class="hidden">
+
+  <div class="card">
+    <h2 id="eventHeading">飲み会詳細</h2>
+    <div class="form-grid">
+      <div>
+        <label>タイトル</label>
+        <input id="editTitle" onchange="updateEvent()">
+      </div>
+      <div>
+        <label>開催日</label>
+        <input id="editDate" type="date" onchange="updateEvent()">
+      </div>
+      <div>
+        <label>二次会</label>
+        <select id="editHasSecond" onchange="updateEvent()">
+          <option value="yes">二次会あり</option>
+          <option value="no">二次会なし（一次会のみ）</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="red small" onclick="deleteEvent()">この飲み会を削除</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>参加メンバー追加</h2>
+    <div class="add-person-box">
+      <div>
+        <label>メンバーの名前</label>
+        <input id="personNameInput" placeholder="名前">
+      </div>
+      <div>
+        <label>一次会</label>
+        <select id="personFirstInput">
+          <option value="参加">参加</option>
+          <option value="不参加">不参加</option>
+          <option value="未定">未定</option>
+        </select>
+      </div>
+      <div id="addGroupSecond">
+        <label>二次会</label>
+        <select id="personSecondInput">
+          <option value="未定">未定</option>
+          <option value="参加">参加</option>
+          <option value="不参加">不参加</option>
+        </select>
+      </div>
+      <div>
+        <button style="width:100%; height:42px;" onclick="addPerson()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>参加状況</h2>
+    <div id="statsContainer" class="stats">
+      <div class="stat">
+        <strong id="count1">0</strong>
+        <span>一次会参加</span>
+      </div>
+      <div class="stat" id="statCard2">
+        <strong id="count2">0</strong>
+        <span>二次会参加</span>
+      </div>
+      <div class="stat">
+        <strong id="countMoney1">0</strong>
+        <span>一次会費徴収済</span>
+      </div>
+      <div class="stat" id="statCardMoney2">
+        <strong id="countMoney2">0</strong>
+        <span>二次会費徴収済</span>
+      </div>
+    </div>
+
+    <div id="memberList"></div>
+  </div>
+
+  <div class="card">
+    <h2>参加状況別リスト</h2>
+    <div id="summary"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+let data = [];
+try {
+  data = JSON.parse(localStorage.getItem("nomikaiData") || "[]");
+  if (!Array.isArray(data)) data = [];
+} catch (e) {
+  data = [];
+}
+
+let selectedId = null;
+let activePersonId = null;
+let isDeleteMode = false;
+let checkedEventIds = new Set();
+
+const save = () => {
+  localStorage.setItem("nomikaiData", JSON.stringify(data));
+};
+
+const current = () => data.find(e => e.id === selectedId);
+
+function addNewEvent() {
+  const titleInput = document.getElementById("newTitle");
+  const dateInput = document.getElementById("newDate");
+  const hasSecondInput = document.getElementById("newHasSecond");
+  
+  const title = titleInput.value.trim();
+  const date = dateInput.value;
+  const hasSecond = hasSecondInput.value === "yes";
+
+  if (!title) {
+    alert("飲み会タイトルを入力してください");
+    titleInput.focus();
+    return;
+  }
+  if (!date) {
+    alert("開催日を選択してください");
+    dateInput.focus();
+    return;
+  }
+
+  const event = {
+    id: Date.now(),
+    title,
+    date,
+    hasSecond,
+    members: []
+  };
+
+  data.push(event);
+  selectedId = event.id;
+  activePersonId = null;
+  isDeleteMode = false;
+  checkedEventIds.clear();
+  save();
+
+  titleInput.value = "";
+  dateInput.value = "";
+  hasSecondInput.value = "yes";
+  render();
+}
+
+function toggleDeleteMode() {
+  isDeleteMode = !isDeleteMode;
+  checkedEventIds.clear();
+  renderEvents();
+}
+
+function handleEventClick(id) {
+  if (isDeleteMode) {
+    if (checkedEventIds.has(id)) {
+      checkedEventIds.delete(id);
+    } else {
+      checkedEventIds.add(id);
+    }
+    renderEvents();
+  } else {
+    selectedId = id;
+    activePersonId = null;
+    render();
+  }
+}
+
+function executeDeleteEvents() {
+  if (checkedEventIds.size === 0) {
+    alert("削除する飲み会にチェックを入れてください");
+    return;
+  }
+  if (!confirm(`選択した ${checkedEventIds.size} 件の飲み会を削除しますか？`)) return;
+
+  data = data.filter(e => !checkedEventIds.has(e.id));
+  if (checkedEventIds.has(selectedId)) {
+    selectedId = null;
+    activePersonId = null;
+  }
+  
+  isDeleteMode = false;
+  checkedEventIds.clear();
+  save();
+  render();
+}
+
+function deleteEvent() {
+  if (!confirm("この飲み会を削除しますか？")) return;
+
+  data = data.filter(e => e.id !== selectedId);
+  selectedId = null;
+  activePersonId = null;
+  save();
+  render();
+}
+
+function updateEvent() {
+  const e = current();
+  if (!e) return;
+
+  e.title = document.getElementById("editTitle").value;
+  e.date = document.getElementById("editDate").value;
+  e.hasSecond = document.getElementById("editHasSecond").value === "yes";
+  
+  save();
+  renderEvents();
+  renderMembers();
+}
+
+function addPerson() {
+  const e = current();
+  const nameInput = document.getElementById("personNameInput");
+  const name = nameInput.value.trim();
+
+  if (!name || !e) return;
+
+  if (!e.members) e.members = [];
+
+  const first = document.getElementById("personFirstInput").value;
+  const second = e.hasSecond ? document.getElementById("personSecondInput").value : "不参加";
+
+  e.members.push({
+    id: Date.now() + Math.random(),
+    name,
+    first,
+    second,
+    moneyFirst: "未徴収",
+    moneySecond: "未徴収"
+  });
+
+  nameInput.value = "";
+  document.getElementById("personFirstInput").value = "参加";
+  if (e.hasSecond) {
+    document.getElementById("personSecondInput").value = "未定";
+  }
+
+  save();
+  render();
+}
+
+function togglePerson(id) {
+  activePersonId = (activePersonId === id) ? null : id;
+  renderMembers();
+}
+
+function updateMember(id, key, value) {
+  const e = current();
+  if (!e || !e.members) return;
+  const m = e.members.find(p => p.id === id);
+  if (!m) return;
+
+  m[key] = value;
+  save();
+  render();
+}
+
+function deleteMember(id) {
+  const e = current();
+  if (!e || !e.members) return;
+  if (!confirm("このメンバーを削除しますか？")) return;
+
+  e.members = e.members.filter(p => p.id !== id);
+  if (activePersonId === id) activePersonId = null;
+  save();
+  render();
+}
+
+function renderEvents() {
+  const list = document.getElementById("eventList");
+  const toggleBtn = document.getElementById("toggleDeleteModeBtn");
+  const deleteActions = document.getElementById("deleteActions");
+
+  if (!data.length) {
+    list.innerHTML = '<div class="empty">飲み会はまだ登録されていません。</div>';
+    toggleBtn.classList.add("hidden");
+    deleteActions.classList.add("hidden");
+    isDeleteMode = false;
+    return;
+  }
+
+  toggleBtn.classList.remove("hidden");
+  if (isDeleteMode) {
+    toggleBtn.classList.add("hidden");
+    deleteActions.classList.remove("hidden");
+  } else {
+    deleteActions.classList.add("hidden");
+  }
+
+  list.innerHTML = data.map(e => {
+    const isChecked = checkedEventIds.has(e.id);
+    const activeClass = (!isDeleteMode && e.id === selectedId) ? "active" : "";
+    const deleteClass = (isDeleteMode && isChecked) ? "checked-delete" : "";
+
+    return `
+      <div class="event-item ${activeClass} ${deleteClass}" onclick="handleEventClick(${e.id})">
+        ${isDeleteMode ? `<input type="checkbox" ${isChecked ? "checked" : ""} onclick="event.stopPropagation(); handleEventClick(${e.id});">` : ""}
+        <div class="event-info">
+          <div class="event-name">${escapeHTML(e.title)}</div>
+          <div class="event-date">
+            ${e.date} ／ ${e.hasSecond ? "一次会・二次会あり" : "一次会のみ"} ／ メンバー ${e.members ? e.members.length : 0}人
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function getBadgeClass(val) {
+  if (val === "参加" || val === "徴収済") return "participating";
+  if (val === "不参加") return "absent";
+  return "pending";
+}
+
+function renderMembers() {
+  const e = current();
+  if (!e) return;
+
+  document.getElementById("eventHeading").textContent = e.title;
+  document.getElementById("editTitle").value = e.title;
+  document.getElementById("editDate").value = e.date;
+  document.getElementById("editHasSecond").value = e.hasSecond ? "yes" : "no";
+
+  const addSec = document.getElementById("addGroupSecond");
+  if (e.hasSecond) {
+    addSec.style.display = "block";
+  } else {
+    addSec.style.display = "none";
+  }
+
+  const statsContainer = document.getElementById("statsContainer");
+  const statCard2 = document.getElementById("statCard2");
+  const statCardMoney2 = document.getElementById("statCardMoney2");
+
+  if (e.hasSecond) {
+    statsContainer.className = "stats";
+    statCard2.style.display = "block";
+    statCardMoney2.style.display = "block";
+  } else {
+    statsContainer.className = "stats cols-2";
+    statCard2.style.display = "none";
+    statCardMoney2.style.display = "none";
+  }
+
+  const members = e.members || [];
+
+  document.getElementById("count1").textContent =
+    members.filter(m => m.first === "参加").length;
+
+  document.getElementById("countMoney1").textContent =
+    members.filter(m => m.moneyFirst === "徴収済").length;
+
+  if (e.hasSecond) {
+    document.getElementById("count2").textContent =
+      members.filter(m => m.second === "参加").length;
+    document.getElementById("countMoney2").textContent =
+      members.filter(m => m.moneySecond === "徴収済").length;
+  }
+
+  const list = document.getElementById("memberList");
+
+  if (!members.length) {
+    list.innerHTML = '<div class="empty">メンバーを追加してください。</div>';
+  } else {
+    list.innerHTML = members.map(m => {
+      const isOpen = (m.id === activePersonId);
+      return `
+        <div class="person">
+          <div class="person-header" onclick="togglePerson(${m.id})">
+            <div class="person-top-row">
+              <span class="person-name">${escapeHTML(m.name)}</span>
+              <span class="edit-toggle-label">${isOpen ? '▲ 閉じる' : '▼ 編集'}</span>
+            </div>
+            
+            <!-- 1段目：参加状況 -->
+            <div class="person-badges-row">
+              <span>1次: <span class="badge ${getBadgeClass(m.first)}">${m.first}</span></span>
+              ${e.hasSecond ? `<span>2次: <span class="badge ${getBadgeClass(m.second)}">${m.second}</span></span>` : ''}
+              ${!e.hasSecond ? `<span>1次会費: <span class="badge ${m.moneyFirst === '徴収済' ? 'participating' : ''}">${m.moneyFirst}</span></span>` : ''}
+            </div>
+
+            <!-- 2段目（二次会がある場合のみ改行して会費を表示） -->
+            ${e.hasSecond ? `
+            <div class="person-badges-row">
+              <span>1次会費: <span class="badge ${m.moneyFirst === '徴収済' ? 'participating' : ''}">${m.moneyFirst}</span></span>
+              <span>2次会費: <span class="badge ${m.moneySecond === '徴収済' ? 'participating' : ''}">${m.moneySecond}</span></span>
+            </div>
+            ` : ''}
+          </div>
+          
+          <div class="person-body ${isOpen ? '' : 'hidden'}">
+            <div class="person-grid ${e.hasSecond ? '' : 'cols-2'}">
+              <div>
+                <label>一次会</label>
+                <select onchange="updateMember(${m.id},'first',this.value)">
+                  ${options(["参加","不参加","未定"],m.first)}
+                </select>
+              </div>
+              ${e.hasSecond ? `
+              <div>
+                <label>二次会</label>
+                <select onchange="updateMember(${m.id},'second',this.value)">
+                  ${options(["参加","不参加","未定"],m.second)}
+                </select>
+              </div>
+              ` : ''}
+              <div>
+                <label>一次会費</label>
+                <select onchange="updateMember(${m.id},'moneyFirst',this.value)">
+                  ${options(["未徴収","徴収済","対象外"],m.moneyFirst)}
+                </select>
+              </div>
+              ${e.hasSecond ? `
+              <div>
+                <label>二次会費</label>
+                <select onchange="updateMember(${m.id},'moneySecond',this.value)">
+                  ${options(["未徴収","徴収済","対象外"],m.moneySecond)}
+                </select>
+              </div>
+              ` : ''}
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+              <button class="red small" onclick="deleteMember(${m.id})">このメンバーを削除</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  renderSummary(members, e.hasSecond);
+}
+
+function options(items, selected) {
+  return items.map(v =>
+    `<option value="${v}" ${v === selected ? "selected" : ""}>${v}</option>`
+  ).join("");
+}
+
+function renderSummary(members, hasSecond) {
+  const summary = document.getElementById("summary");
+
+  let groups = [
+    ["一次会参加", "first", "参加"],
+    ["一次会不参加", "first", "不参加"],
+    ["一次会未定", "first", "未定"],
+    ["一次会費 未徴収", "moneyFirst", "未徴収"]
+  ];
+
+  if (hasSecond) {
+    groups.push(
+      ["二次会参加", "second", "参加"],
+      ["二次会不参加", "second", "不参加"],
+      ["二次会未定", "second", "未定"],
+      ["二次会費 未徴収", "moneySecond", "未徴収"]
+    );
+  }
+
+  summary.innerHTML = groups.map(([title,key,value]) => {
+    const names = members
+      .filter(m => m[key] === value)
+      .map(m => escapeHTML(m.name));
+
+    return `
+      <div class="section-title">${title}（${names.length}人）</div>
+      <div class="empty">
+        ${names.length ? names.join("、") : "該当者なし"}
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[c]);
+}
+
+function render() {
+  renderEvents();
+
+  const e = current();
+  document.getElementById("management").classList.toggle("hidden", !e);
+
+  if (e) renderMembers();
+}
+
+render();
+</script>
+</body>
+</html>
